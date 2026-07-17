@@ -15,9 +15,9 @@ Keep updating this file as decisions are made during the project.
 | Requirements & user stories             | ✅ Drafted            | See below — refine as scope firms up   |
 | Architecture diagram                    | ✅ Drafted (PlantUML) | See below                              |
 | Data audit (known issues doc)           | ✅ Done               | See "Known issues" under Dataset section below |
-| ETL pipeline (raw Excel → PostgreSQL)   | ⏳ In progress         | `scripts/etl.py`, dataset copied to `data/raw/` |
-| Database schema                         | ⏳ Not started        |                                        |
-| Backend API (FastAPI)                   | ⏳ Not started        |                                        |
+| ETL pipeline (raw Excel → PostgreSQL)   | ✅ Done               | `scripts/etl.py`; verified row counts, dedup, and needs_review flags against the live DB |
+| Database schema                         | ✅ Done               | Created by `scripts/etl.py` (attractions, hotels, restaurants, transport, kuliner, wisata_reviews, resto_hotel_reviews) |
+| Backend API (FastAPI)                   | ✅ Done               | `backend/`; `POST /itinerary` + `GET /health`; SQL constraint filter (needs_review excluded) → SEA-LION narrative, grounded via ID lookup |
 | RAG / embeddings layer                  | ⏳ Not started        |                                        |
 | NLP (review sentiment/topic extraction) | ⏳ Not started        |                                        |
 | Frontend (React, desktop-first)         | ⏳ Not started        |                                        |
