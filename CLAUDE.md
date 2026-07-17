@@ -156,6 +156,8 @@ end note
 
 **Key architectural decision:** the LLM narrates _on top of_ a SQL-filtered candidate set, rather than doing open-ended retrieval over the whole dataset. This keeps results grounded (no hallucinated places/prices), keeps the system debuggable, and still gives a real RAG story for the pitch.
 
+**Narrative design decision (Phase 2):** SEA-LION's `narrative`/`summary` text is instructed to refer to picks generically by role ("your morning transport", "the first attraction", "day 2's accommodation") rather than naming them — the verified name/price/address lives only in the structured `attractions`/`meals`/`lodging`/`transport` fields, resolved from the DB by id. This exists because an earlier prompt version let the LLM name places directly in prose, which occasionally introduced small transcription mismatches (e.g. narrative said "Mobil KBT" when the structured pick was "Mobil KPT") — a real but different place, so it read as a factual error even though the structured data was correct. **Consequence for Phase 3 frontend:** render the structured item (name, price, address) first/prominently; treat `narrative` as connective/context text underneath, not as the source of truth for what was picked. Verified across all 5 sample prompts (10 day-narratives) with zero place names leaking into narrative text.
+
 ---
 
 ## Dataset (raw source: `data/raw/Dataset_Tourism.xlsx`, 14 sheets)

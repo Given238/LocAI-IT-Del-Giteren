@@ -68,9 +68,13 @@ def _candidate_summary(pool):
 
 
 RESPONSE_SHAPE = (
-    '{"summary": "2-3 sentence overview of the whole trip", '
+    '{"summary": "2-3 sentence overview of the whole trip, generic, no place names", '
     '"days": [{"day": 1, "attraction_ids": [1, 2], "restaurant_ids": [3], '
-    '"hotel_id": 4, "transport_ids": [5], "narrative": "2-4 sentences describing this day"}]}'
+    '"hotel_id": 4, "transport_ids": [5], "narrative": '
+    '"2-4 sentences of connective/context text for this day, referring to items by '
+    'role only, e.g. \'Start with your morning transport, then spend the day at your '
+    'first attraction before a second nearby stop. Grab lunch at your chosen restaurant '
+    'and settle into your accommodation for the night.\'"}]}'
 )
 
 
@@ -83,10 +87,15 @@ def build_messages(req, pool):
         "ONLY the ids given below -- never invent a place, price, id, or detail that is "
         "not in the candidate lists. If a category has no suitable candidate for a day, "
         "leave that list empty or the field null rather than inventing one. Keep total "
-        "estimated spending within the traveler's budget. The narrative for each day must "
-        "mention ONLY the places whose ids you put in that same day's attraction_ids, "
-        "restaurant_ids, hotel_id, and transport_ids -- do not name any other place, even "
-        "in passing, and do not suggest alternatives that are not in that day's id lists.\n"
+        "estimated spending within the traveler's budget.\n"
+        "The actual verified name/price/address of each pick is rendered separately from "
+        "your id choices, so the narrative and summary must NOT name, quote, or paraphrase "
+        "any specific place, restaurant, hotel, or transport operator -- not even ones from "
+        "the candidate lists. Instead, refer to picks generically by their role or order, "
+        "e.g. 'your morning transport', 'the first attraction', 'a nearby lunch stop', "
+        "'day 2's accommodation'. Use the narrative only for connective tissue, pacing, and "
+        "context (why this order, what to expect, time-of-day framing) -- never as the "
+        "place a name first appears.\n"
         "Respond with ONLY a single raw JSON object -- no markdown code fences, no "
         f"commentary before or after -- matching exactly this shape:\n{RESPONSE_SHAPE}\n"
         f"Plan exactly {num_days} day(s). Always set hotel_id to null when duration_nights "
