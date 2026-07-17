@@ -20,7 +20,7 @@ Keep updating this file as decisions are made during the project.
 | Backend API (FastAPI)                   | ✅ Done               | `backend/`; `POST /itinerary` + `GET /health`; SQL constraint filter (needs_review excluded) → SEA-LION narrative, grounded via ID lookup |
 | RAG / embeddings layer                  | ⏳ Not started        |                                        |
 | NLP (review sentiment/topic extraction) | ⏳ Not started        |                                        |
-| Frontend (React, desktop-first)         | ⏳ Not started        |                                        |
+| Frontend (React, desktop-first)         | ✅ Done               | `frontend/` (Vite + React); wired to real `/itinerary`, no mock data; verified in a real browser (Playwright) — see narrative design decision above for the structured-item-first display contract |
 | Android port                            | ⏳ Not started        | Target: ASAP after web MVP             |
 | Deployment                              | ⏳ Not started        |                                        |
 

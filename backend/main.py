@@ -1,8 +1,9 @@
 import logging
 
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 
-from . import db
+from . import config, db
 from .itinerary import build_itinerary
 from .llm import LLMGenerationError
 from .schemas import ItineraryRequest, ItineraryResponse
@@ -10,6 +11,13 @@ from .schemas import ItineraryRequest, ItineraryResponse
 logging.basicConfig(level=logging.INFO)
 
 app = FastAPI(title="LocAI API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=config.CORS_ORIGINS,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/health")
