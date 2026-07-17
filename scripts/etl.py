@@ -26,6 +26,7 @@ DATASET_PATH = os.environ.get("DATASET_PATH", "data/raw/Dataset_Tourism.xlsx")
 DATABASE_URL = os.environ.get("DATABASE_URL")
 FUZZY_THRESHOLD_ATTRACTIONS = 90
 FUZZY_THRESHOLD_REVIEWS = 88
+MIN_PLAUSIBLE_MEAL_PRICE = 5000  # IDR; below this, a parsed price likely means a missing trailing zero in the source (e.g. "18.00" meant "18.000")
 
 HOTEL_TYPES = {
     "hotel", "guest house", "rumah wisata", "hotel bintang 1",
@@ -261,6 +262,22 @@ def dedupe_attractions(records):
 # Hotels / restaurants: reclassify hotel-metadata, merge resto-metadata
 # ---------------------------------------------------------------------------
 
+def flag_implausible_meal_price(rec):
+    """Restaurants only: a parsed price under MIN_PLAUSIBLE_MEAL_PRICE likely
+    means a missing trailing zero in the source (e.g. "18.00" meant "18.000"),
+    not a genuinely cheap meal. Flag instead of accepting the parsed value.
+    'Gratis'/'Sukarela' are legitimate low/absent prices and are exempt."""
+    p_raw, p_min = rec["price_raw"], rec["price_min"]
+    if p_raw is None or p_min is None or p_raw.strip().lower() in ("gratis", "sukarela"):
+        return
+    if p_min < MIN_PLAUSIBLE_MEAL_PRICE:
+        rec["needs_review"] = True
+        note = (f"price_min {p_min} below plausible meal price threshold "
+                f"(Rp{MIN_PLAUSIBLE_MEAL_PRICE:,}); likely a missing trailing zero "
+                f"in source price '{p_raw}'")
+        rec["review_notes"] = (rec["review_notes"] + "; " + note) if rec["review_notes"] else note
+
+
 def build_hotel_and_restaurant_records(sheets):
     hm, n_drop_hm = drop_blank_rows(sheets["hotel-metadata"], "place-name")
     rm, n_drop_rm = drop_blank_rows(sheets["resto-metadata"], "place-name")
@@ -292,6 +309,7 @@ def build_hotel_and_restaurant_records(sheets):
         if pt_norm in HOTEL_TYPES:
             hotels.append(rec)
         elif pt_norm in RESTO_TYPES:
+            flag_implausible_meal_price(rec)
             restaurants.append(rec)
         else:
             rec["needs_review"] = True
@@ -302,7 +320,7 @@ def build_hotel_and_restaurant_records(sheets):
     for _, row in rm.iterrows():
         lat, lon = parse_latlong(row.get("lat-long"))
         p_min, p_max, p_raw, p_review = parse_price(row.get("price-per-head"))
-        restaurants.append({
+        rec = {
             "name": clean_str(row.get("place-name")),
             "place_type_raw": clean_str(row.get("place-type")),
             "price_min": p_min, "price_max": p_max, "price_raw": p_raw,
@@ -317,7 +335,9 @@ def build_hotel_and_restaurant_records(sheets):
             "source_sheet": "resto-metadata",
             "needs_review": p_review,
             "review_notes": "price unparseable" if p_review else None,
-        })
+        }
+        flag_implausible_meal_price(rec)
+        restaurants.append(rec)
 
     counts = {"hotel-metadata": (len(sheets["hotel-metadata"]), n_drop_hm),
               "resto-metadata": (len(sheets["resto-metadata"]), n_drop_rm)}
