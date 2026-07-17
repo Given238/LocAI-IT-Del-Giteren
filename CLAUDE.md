@@ -14,8 +14,8 @@ Keep updating this file as decisions are made during the project.
 | --------------------------------------- | --------------------- | -------------------------------------- |
 | Requirements & user stories             | ✅ Drafted            | See below — refine as scope firms up   |
 | Architecture diagram                    | ✅ Drafted (PlantUML) | See below                              |
-| Data audit (known issues doc)           | ⏳ Not started        | Go sheet-by-sheet, document dupes/gaps |
-| ETL pipeline (raw Excel → PostgreSQL)   | ⏳ Not started        |                                        |
+| Data audit (known issues doc)           | ✅ Done               | See "Known issues" under Dataset section below |
+| ETL pipeline (raw Excel → PostgreSQL)   | ⏳ In progress         | `scripts/etl.py`, dataset copied to `data/raw/` |
 | Database schema                         | ⏳ Not started        |                                        |
 | Backend API (FastAPI)                   | ⏳ Not started        |                                        |
 | RAG / embeddings layer                  | ⏳ Not started        |                                        |
@@ -158,25 +158,30 @@ end note
 
 ---
 
-## Dataset (raw source: `Dataset_Tourism.xlsx`, 14 sheets)
+## Dataset (raw source: `data/raw/Dataset_Tourism.xlsx`, 14 sheets)
 
-| Sheet                                                                                                      | Rows              | Contents                                                                         |
-| ---------------------------------------------------------------------------------------------------------- | ----------------- | -------------------------------------------------------------------------------- |
-| `wisata-metadata`                                                                                          | 990               | Attractions: id, name, type, entry fee, lat-long, hours, address, rating, status |
-| `wisata-v2`                                                                                                | 13,671            | Raw reviews on attractions                                                       |
-| `hotel-metadata`                                                                                           | 2,672             | Lodging: price, facilities, address, lat-long, rating                            |
-| `resto-metadata`                                                                                           | 2,784             | Restaurants: price, menu, facilities, address, lat-long, rating                  |
-| `resto-hotel-v2`                                                                                           | 12,181            | Raw reviews on hotels/restaurants                                                |
-| `hotel-resto-v1`, `tempat-wisata-v1`                                                                       | 959 / 1,170       | Earlier/messier duplicate versions — dedup against v2/metadata sheets            |
-| `transportasi`                                                                                             | 984               | Angkot/boat/flight routes, prices, hours                                         |
-| `kuliner`                                                                                                  | 984               | Local food descriptions (not tied to specific restaurants)                       |
-| `Attractions Info`, `Artikel Danau Toba`, `Info Seputar Danau Toba (TOP 3)`, `waktu operasional destinasi` | small             | Curated reference/article sheets                                                 |
-| `prompt`                                                                                                   | 5 example prompts | **Use these as acceptance tests**                                                |
+> Row counts below are from the actual audited file (2026-07-17), not estimates. An earlier draft of this table had much larger numbers (990/13,671/2,672/etc.) that didn't match the real file — corrected here. `BUILD_PLAYBOOK.md`'s Phase 1 verify numbers were already correct.
+
+| Sheet                                                                                                      | Rows               | Contents                                                                         |
+| ------------------------------------------------------------------------------------------------------------ | ------------------ | --------------------------------------------------------------------------------- |
+| `wisata-metadata`                                                                                            | 139                | Attractions: id, name, type, entry fee, lat-long, hours, address, rating, status |
+| `wisata-v2`                                                                                                  | 12,691             | Raw reviews on attractions (~69% exact-match to a metadata place name)          |
+| `hotel-metadata`                                                                                             | 36                 | Lodging: price, facilities, address, lat-long, rating — includes miscategorized rows (see below) |
+| `resto-metadata`                                                                                             | 148                | Restaurants: price, menu, facilities, address, lat-long, rating                  |
+| `resto-hotel-v2`                                                                                             | 9,611              | Raw reviews on hotels/restaurants                                                 |
+| `hotel-resto-v1`                                                                                             | 9                  | Earlier/messier duplicate version — tiny, superseded by resto-hotel-v2/metadata, not ingested |
+| `tempat-wisata-v1`                                                                                           | 96                 | Earlier/messier duplicate of attractions — 89/94 names exact-match wisata-metadata; merge+dedupe with fuzzy match for the rest |
+| `transportasi`                                                                                               | 16                 | Angkot/boat routes, prices, hours                                                 |
+| `kuliner`                                                                                                    | 12                 | Local food descriptions (not tied to specific restaurants)                       |
+| `Attractions Info`, `Artikel Danau Toba`, `Info Seputar Danau Toba (TOP 3)`, `waktu operasional destinasi`  | small, messy headers | Curated reference/article sheets — real header row isn't row 0; out of scope for Phase 1 schema, revisit if time allows for RAG background context |
+| `prompt`                                                                                                     | 5 example prompts (real header starts row 2) | **Use these as acceptance tests**                        |
 
 **Known issues to document in the ETL writeup** (also required by the challenge doc's "Known Issues" guidance):
 
-- Duplicate places across v1/v2 sheet pairs
-- Inconsistent price formats (ranges like "5.000 - 10.000" vs single numbers)
+- Duplicate places across v1/v2 sheet pairs (e.g. one exact intra-sheet duplicate in `wisata-metadata` itself — "Bukit Tara Bunga" appears twice with near-identical lat-long)
+- `resto-metadata` has one name-duplicate ("Family Resto") that is actually two different branches at different addresses — a trap for naive name-based dedup; only `wisata-metadata`+`tempat-wisata-v1` are deduplicated per the Phase 1 spec, hotels/restaurants are not
+- Inconsistent price formats: ranges like "5.000 - 10.000" vs single numbers ("100000") vs special values ("Gratis" = free, "Sukarela" = donation-based, not zero) vs a range separator that's actually a Unicode en-dash "–" wrapped in non-breaking spaces in some `resto-metadata` rows (renders as "�" in some terminals/fonts — not corruption, just `\xa0`/`–`)
+- `hotel-metadata` has miscategorized rows: several entries named like lodging (e.g. "Tabo Cottages", "Thyesza Hotel Resort") are tagged `place-type = "Restoran"`, and one row ("Hotel and Restaurant Singgalang") has `place-type = "China"` (corrupted/meaningless) — reclassify by `place-type` value, flag the unclear one instead of guessing
 - Missing/inconsistent lat-long, hours, ratings on some entries
 - Free-text addresses that need parsing/geocoding
 
