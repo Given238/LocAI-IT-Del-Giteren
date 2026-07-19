@@ -4,9 +4,10 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from . import config, db
+from .chat import handle_chat
 from .itinerary import build_itinerary
 from .llm import LLMGenerationError
-from .schemas import ItineraryRequest, ItineraryResponse
+from .schemas import ChatRequest, ChatResponse, ItineraryRequest, ItineraryResponse
 
 logging.basicConfig(level=logging.INFO)
 
@@ -39,5 +40,13 @@ def health():
 def create_itinerary(req: ItineraryRequest):
     try:
         return build_itinerary(req)
+    except LLMGenerationError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
+@app.post("/chat", response_model=ChatResponse)
+def chat(req: ChatRequest):
+    try:
+        return handle_chat(req)
     except LLMGenerationError as e:
         raise HTTPException(status_code=502, detail=str(e))

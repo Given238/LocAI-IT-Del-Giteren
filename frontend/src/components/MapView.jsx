@@ -26,7 +26,7 @@ function FitBounds({ startCoords, destCoords }) {
   return null;
 }
 
-export default function MapView({ startCoords, startLabel, selectedPlace }) {
+export default function MapView({ startCoords, startLabel, selectedPlace, onClose, sticky = true }) {
   if (!startCoords) return null;
 
   const destCoords =
@@ -35,7 +35,12 @@ export default function MapView({ startCoords, startLabel, selectedPlace }) {
       : null;
 
   return (
-    <div className="map-panel">
+    <div className={`map-panel${sticky ? " map-panel-sticky" : ""}`}>
+      {onClose && (
+        <button type="button" className="map-close-button" onClick={onClose}>
+          Close map ✕
+        </button>
+      )}
       <MapContainer center={startCoords} zoom={10} scrollWheelZoom={false} className="map-container">
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

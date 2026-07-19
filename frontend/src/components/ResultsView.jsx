@@ -3,11 +3,13 @@ import { formatIdr } from "../format";
 import DayCard from "./DayCard";
 import MapView from "./MapView";
 
-export default function ResultsView({ result }) {
+export default function ResultsView({ result, collapsibleMap = false }) {
   const [selectedPlace, setSelectedPlace] = useState(null);
+  const [mapOpen, setMapOpen] = useState(!collapsibleMap);
 
   const hasMap = result.start_latitude != null && result.start_longitude != null;
   const startCoords = hasMap ? [result.start_latitude, result.start_longitude] : null;
+  const mapShowing = hasMap && mapOpen;
 
   return (
     <div className="results-view">
@@ -25,11 +27,19 @@ export default function ResultsView({ result }) {
         </p>
       )}
 
-      {hasMap && (
+      {hasMap && !mapOpen && (
+        <button type="button" className="map-open-button" onClick={() => setMapOpen(true)}>
+          Show map &amp; distances
+        </button>
+      )}
+
+      {mapShowing && (
         <MapView
           startCoords={startCoords}
           startLabel={result.distance_reference}
           selectedPlace={selectedPlace}
+          onClose={collapsibleMap ? () => setMapOpen(false) : undefined}
+          sticky={!collapsibleMap}
         />
       )}
 
@@ -38,8 +48,8 @@ export default function ResultsView({ result }) {
           key={day.day}
           day={day}
           distanceReference={result.distance_reference}
-          selectedPlace={hasMap ? selectedPlace : null}
-          onSelectPlace={hasMap ? setSelectedPlace : undefined}
+          selectedPlace={mapShowing ? selectedPlace : null}
+          onSelectPlace={mapShowing ? setSelectedPlace : undefined}
         />
       ))}
     </div>

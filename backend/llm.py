@@ -150,20 +150,22 @@ def _extract_json(text: str) -> dict:
     return json.loads(text)
 
 
-def generate_itinerary_plan(req, pool, max_attempts=5) -> dict:
-    client = get_client()
-    messages = build_messages(req, pool)
+def complete_with_retry(client, messages, parse_fn, retry_prompt, max_attempts=5, **create_kwargs):
+    """
+    Shared by generate_itinerary_plan and the chat orchestrator: calls the
+    model with exponential backoff on rate-limit/API errors, and -- if
+    parse_fn(content) raises ValueError (e.g. malformed JSON) -- retries
+    with retry_prompt appended to the conversation. Total attempts (network
+    retries and format retries combined) capped at max_attempts. Returns
+    whatever parse_fn returns.
+    """
     backoff = 3
     last_error = None
+    msgs = list(messages)
 
     for _ in range(max_attempts):
         try:
-            resp = client.chat.completions.create(
-                model=config.LLM_MODEL,
-                messages=messages,
-                temperature=0.4,
-                max_tokens=2500,
-            )
+            resp = client.chat.completions.create(model=config.LLM_MODEL, messages=msgs, **create_kwargs)
         except RateLimitError as e:
             last_error = e
             time.sleep(backoff)
@@ -177,16 +179,21 @@ def generate_itinerary_plan(req, pool, max_attempts=5) -> dict:
 
         content = resp.choices[0].message.content or ""
         try:
-            return _extract_json(content)
-        except (json.JSONDecodeError, ValueError) as e:
+            return parse_fn(content)
+        except ValueError as e:
             last_error = e
-            messages.append({"role": "assistant", "content": content})
-            messages.append({
-                "role": "user",
-                "content": "That was not valid JSON. Reply again with ONLY the JSON object described earlier, nothing else.",
-            })
+            msgs.append({"role": "assistant", "content": content})
+            msgs.append({"role": "user", "content": retry_prompt})
             continue
 
-    raise LLMGenerationError(
-        f"SEA-LION did not return a usable itinerary after {max_attempts} attempts: {last_error}"
+    raise LLMGenerationError(f"SEA-LION did not return a usable response after {max_attempts} attempts: {last_error}")
+
+
+def generate_itinerary_plan(req, pool, max_attempts=5) -> dict:
+    client = get_client()
+    messages = build_messages(req, pool)
+    return complete_with_retry(
+        client, messages, _extract_json,
+        "That was not valid JSON. Reply again with ONLY the JSON object described earlier, nothing else.",
+        max_attempts=max_attempts, temperature=0.4, max_tokens=2500,
     )

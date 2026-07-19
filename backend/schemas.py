@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -54,3 +54,25 @@ class ItineraryResponse(BaseModel):
     distance_reference: Optional[str] = None
     start_latitude: Optional[float] = None
     start_longitude: Optional[float] = None
+
+
+class ChatMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str
+    # Only ever set on an assistant message that resulted from a successful
+    # generate_itinerary tool call -- carried in history so a later "export
+    # as PDF" request can find the last verified result without regenerating
+    # anything.
+    itinerary: Optional[ItineraryResponse] = None
+
+
+class ChatRequest(BaseModel):
+    history: list[ChatMessage] = []
+    message: str = Field(..., min_length=1)
+
+
+class ChatResponse(BaseModel):
+    reply: str
+    itinerary: Optional[ItineraryResponse] = None
+    pdf_base64: Optional[str] = None
+    pdf_filename: Optional[str] = None

@@ -18,6 +18,33 @@
   margin-top: 6px;
 }
 
+.mode-toggle {
+  display: inline-flex;
+  gap: 4px;
+  margin-top: 16px;
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 4px;
+}
+
+.mode-tab {
+  font: inherit;
+  font-weight: 600;
+  font-size: 14px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  padding: 6px 16px;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.mode-tab.active {
+  background: var(--accent);
+  color: #fff;
+}
+
 .app-main {
   display: grid;
   grid-template-columns: 320px 1fr;
@@ -25,10 +52,128 @@
   align-items: start;
 }
 
+.app-main-chat {
+  display: block;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.mode-hidden {
+  display: none;
+}
+
 @media (max-width: 860px) {
   .app-main {
     grid-template-columns: 1fr;
   }
+}
+
+/* ---- Chat ---- */
+
+.chat-view {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.chat-intro {
+  color: var(--text-muted);
+  font-size: 14px;
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+}
+
+.chat-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 120px;
+  max-height: 65vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.chat-bubble-row {
+  display: flex;
+}
+
+.chat-bubble-row.user {
+  justify-content: flex-end;
+}
+
+.chat-bubble-row.assistant {
+  justify-content: flex-start;
+}
+
+.chat-bubble {
+  max-width: 100%;
+  border-radius: 12px;
+  padding: 12px 16px;
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+}
+
+.chat-bubble-row.user .chat-bubble {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  max-width: 75%;
+}
+
+.chat-bubble-row.assistant .chat-bubble {
+  width: 100%;
+}
+
+.chat-bubble-text {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.chat-bubble-typing {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.chat-pdf-link {
+  display: inline-block;
+  margin-top: 8px;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+  border: 1px solid var(--accent-border);
+  border-radius: 8px;
+  padding: 6px 12px;
+}
+
+.chat-pdf-link:hover {
+  background: var(--accent-bg);
+}
+
+.chat-error {
+  color: var(--error);
+  font-size: 13px;
+}
+
+.chat-input-row {
+  display: flex;
+  gap: 10px;
+}
+
+.chat-input-row input {
+  flex: 1;
+  font: inherit;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel-bg);
+  color: var(--text);
+}
+
+.chat-input-row input:focus {
+  outline: 2px solid var(--accent-border);
+  outline-offset: 1px;
 }
 
 /* ---- Form ---- */
@@ -207,9 +352,6 @@
 /* ---- Map ---- */
 
 .map-panel {
-  position: sticky;
-  top: 24px;
-  z-index: 1;
   background: var(--panel-bg);
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -217,6 +359,51 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+/* Only sticky in the form's tall two-column layout, where staying visible
+   while scrolling past many day cards is helpful. Never sticky inside
+   chat's own bounded, already-scrollable message list -- that combination
+   was making the map feel stuck on screen with no way out. */
+.map-panel-sticky {
+  position: sticky;
+  top: 24px;
+  z-index: 1;
+}
+
+.map-open-button {
+  align-self: flex-start;
+  font: inherit;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--accent);
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+  border-radius: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+.map-open-button:hover {
+  background: var(--accent-border);
+}
+
+.map-close-button {
+  align-self: flex-end;
+  font: inherit;
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+.map-close-button:hover {
+  background: var(--border);
+  color: var(--text-h);
 }
 
 .map-container {

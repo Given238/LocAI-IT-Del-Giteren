@@ -7,10 +7,10 @@ export class ApiError extends Error {
   }
 }
 
-export async function fetchItinerary(payload) {
+async function postJson(path, payload) {
   let res;
   try {
-    res = await fetch(`${API_BASE_URL}/itinerary`, {
+    res = await fetch(`${API_BASE_URL}${path}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -35,4 +35,12 @@ export async function fetchItinerary(payload) {
   }
 
   return body;
+}
+
+export function fetchItinerary(payload) {
+  return postJson("/itinerary", payload);
+}
+
+export function fetchChat(history, message) {
+  return postJson("/chat", { history, message });
 }

@@ -1,7 +1,7 @@
 import { formatPriceRange } from "../format";
 
 export default function PlaceItem({ place, roleLabel, distanceReference, onSelect, isSelected }) {
-  const isMappable = place.distance_km != null && place.latitude != null && place.longitude != null;
+  const isMappable = Boolean(onSelect) && place.distance_km != null && place.latitude != null && place.longitude != null;
 
   return (
     <div
