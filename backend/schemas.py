@@ -10,6 +10,11 @@ class ItineraryRequest(BaseModel):
     interests: Optional[list[str]] = Field(
         default=None, description='e.g. ["nature", "culture", "culinary", "spiritual", "recreation", "business"]'
     )
+    locale: Optional[str] = Field(
+        default=None,
+        description="SEA locale for narrative tone only, e.g. \"indonesian\", \"malaysian\", \"singaporean\", "
+        '"filipino", "thai", "vietnamese". Never affects candidate filtering/selection.',
+    )
 
 
 class PlaceOut(BaseModel):
@@ -21,6 +26,7 @@ class PlaceOut(BaseModel):
     address: Optional[str] = None
     rating: Optional[float] = None
     detail: Optional[str] = None
+    distance_km: Optional[float] = None
 
 
 class DayPlan(BaseModel):
@@ -43,3 +49,4 @@ class ItineraryResponse(BaseModel):
     estimated_total_cost_min: Optional[float] = None
     estimated_total_cost_max: Optional[float] = None
     candidates_considered: dict
+    distance_reference: Optional[str] = None

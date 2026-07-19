@@ -50,7 +50,7 @@ def query_attractions(cur, budget, interests, limit=40):
     place_types = resolve_attraction_place_types(interests)
     sql = """
         SELECT id, name, place_type, entry_fee_min, entry_fee_max, address,
-               rating, operational_hour, description
+               rating, operational_hour, description, latitude, longitude
         FROM attractions
         WHERE needs_review = FALSE
           AND (status IS NULL OR status <> 'tutup')
@@ -69,7 +69,8 @@ def query_attractions(cur, budget, interests, limit=40):
 def query_hotels(cur, budget, limit=20):
     cur.execute(
         """
-        SELECT id, name, place_type_raw, price_min, price_max, address, rating, facilities
+        SELECT id, name, place_type_raw, price_min, price_max, address, rating, facilities,
+               latitude, longitude
         FROM hotels
         WHERE needs_review = FALSE
           AND (status IS NULL OR status <> 'tutup')
@@ -84,7 +85,8 @@ def query_hotels(cur, budget, limit=20):
 def query_restaurants(cur, budget, limit=30):
     cur.execute(
         """
-        SELECT id, name, place_type_raw, price_min, price_max, address, rating, recommend_menu
+        SELECT id, name, place_type_raw, price_min, price_max, address, rating, recommend_menu,
+               latitude, longitude
         FROM restaurants
         WHERE needs_review = FALSE
           AND (status IS NULL OR status <> 'tutup')

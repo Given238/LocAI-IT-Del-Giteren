@@ -1,13 +1,22 @@
 import logging
 
-from . import llm
+from . import llm, locations
 from .candidates import fetch_candidate_pool
 from .schemas import DayPlan, ItineraryResponse, PlaceOut
 
 logger = logging.getLogger(__name__)
 
 
-def _place_out(row, category, price_min_key, price_max_key, detail_key=None):
+def _distance_km(row, start_coords):
+    if start_coords is None:
+        return None
+    lat, lon = row.get("latitude"), row.get("longitude")
+    if lat is None or lon is None:
+        return None
+    return locations.haversine_km(start_coords[0], start_coords[1], float(lat), float(lon))
+
+
+def _place_out(row, category, price_min_key, price_max_key, detail_key=None, start_coords=None):
     return PlaceOut(
         id=row["id"],
         name=row.get("name") or row.get("transport_name"),
@@ -17,6 +26,7 @@ def _place_out(row, category, price_min_key, price_max_key, detail_key=None):
         address=row.get("address"),
         rating=row.get("rating"),
         detail=row.get(detail_key) if detail_key else None,
+        distance_km=_distance_km(row, start_coords),
     )
 
 
@@ -24,7 +34,7 @@ def _index_by_id(rows):
     return {row["id"]: row for row in rows}
 
 
-def _resolve(ids, index, category, price_min_key, price_max_key, detail_key=None):
+def _resolve(ids, index, category, price_min_key, price_max_key, detail_key=None, start_coords=None):
     """Only ids present in our own DB-backed candidate pool are trusted --
     anything the LLM invents that isn't in `index` is silently dropped
     rather than rendered, so a hallucinated id/name/price can never reach
@@ -35,7 +45,7 @@ def _resolve(ids, index, category, price_min_key, price_max_key, detail_key=None
         if row is None:
             logger.warning("LLM referenced unknown %s id %r; dropping", category, pid)
             continue
-        resolved.append(_place_out(row, category, price_min_key, price_max_key, detail_key))
+        resolved.append(_place_out(row, category, price_min_key, price_max_key, detail_key, start_coords))
     return resolved
 
 
@@ -56,6 +66,11 @@ def build_itinerary(req) -> ItineraryResponse:
         "kuliner": len(pool.kuliner),
     }
 
+    # Exact-match only -- an unrecognized start_location simply means no
+    # distance data gets attached anywhere below, never a guessed nearest hub.
+    start_coords = locations.resolve_start_location(req.start_location)
+    distance_reference = req.start_location if start_coords else None
+
     if not pool.feasible:
         return ItineraryResponse(
             feasible=False,
@@ -66,6 +81,7 @@ def build_itinerary(req) -> ItineraryResponse:
             estimated_total_cost_min=None,
             estimated_total_cost_max=None,
             candidates_considered=candidates_considered,
+            distance_reference=distance_reference,
         )
 
     plan = llm.generate_itinerary_plan(req, pool)
@@ -80,11 +96,11 @@ def build_itinerary(req) -> ItineraryResponse:
     for day in plan.get("days", []):
         attractions = _resolve(
             day.get("attraction_ids"), attraction_idx, "attraction",
-            "entry_fee_min", "entry_fee_max", "description",
+            "entry_fee_min", "entry_fee_max", "description", start_coords,
         )
         meals = _resolve(
             day.get("restaurant_ids"), restaurant_idx, "restaurant",
-            "price_min", "price_max", "recommend_menu",
+            "price_min", "price_max", "recommend_menu", start_coords,
         )
         transport = _resolve(
             day.get("transport_ids"), transport_idx, "transport",
@@ -97,7 +113,7 @@ def build_itinerary(req) -> ItineraryResponse:
             if hotel_row is None:
                 logger.warning("LLM referenced unknown hotel id %r; dropping", hotel_id)
             else:
-                lodging = _place_out(hotel_row, "hotel", "price_min", "price_max", "facilities")
+                lodging = _place_out(hotel_row, "hotel", "price_min", "price_max", "facilities", start_coords)
 
         day_places = attractions + meals + transport + ([lodging] if lodging else [])
         day_min, day_max = _sum_range(day_places)
@@ -124,4 +140,5 @@ def build_itinerary(req) -> ItineraryResponse:
         estimated_total_cost_min=total_min,
         estimated_total_cost_max=total_max,
         candidates_considered=candidates_considered,
+        distance_reference=distance_reference,
     )

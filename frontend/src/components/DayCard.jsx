@@ -1,7 +1,7 @@
 import { formatIdr } from "../format";
 import PlaceItem from "./PlaceItem";
 
-export default function DayCard({ day }) {
+export default function DayCard({ day, distanceReference }) {
   const hasAttractions = day.attractions.length > 0;
   const hasMeals = day.meals.length > 0;
   const hasTransport = day.transport.length > 0;
@@ -19,7 +19,7 @@ export default function DayCard({ day }) {
         <section className="day-section">
           <h4>Transport</h4>
           {day.transport.map((t) => (
-            <PlaceItem key={t.id} place={t} />
+            <PlaceItem key={t.id} place={t} distanceReference={distanceReference} />
           ))}
         </section>
       )}
@@ -28,7 +28,7 @@ export default function DayCard({ day }) {
         <section className="day-section">
           <h4>Attractions</h4>
           {day.attractions.map((a) => (
-            <PlaceItem key={a.id} place={a} />
+            <PlaceItem key={a.id} place={a} distanceReference={distanceReference} />
           ))}
         </section>
       )}
@@ -37,7 +37,7 @@ export default function DayCard({ day }) {
         <section className="day-section">
           <h4>Meals</h4>
           {day.meals.map((m) => (
-            <PlaceItem key={m.id} place={m} />
+            <PlaceItem key={m.id} place={m} distanceReference={distanceReference} />
           ))}
         </section>
       )}
@@ -45,7 +45,7 @@ export default function DayCard({ day }) {
       {day.lodging && (
         <section className="day-section">
           <h4>Lodging</h4>
-          <PlaceItem place={day.lodging} />
+          <PlaceItem place={day.lodging} distanceReference={distanceReference} />
         </section>
       )}
 

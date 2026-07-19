@@ -63,7 +63,8 @@
 }
 
 .form-row input[type="number"],
-.form-row input[type="text"] {
+.form-row input[type="text"],
+.locale-select {
   font: inherit;
   padding: 8px 10px;
   border: 1px solid var(--border);
@@ -72,7 +73,8 @@
   color: var(--text);
 }
 
-.form-row input:focus {
+.form-row input:focus,
+.locale-select:focus {
   outline: 2px solid var(--accent-border);
   outline-offset: 1px;
 }
@@ -193,6 +195,15 @@
   font-style: italic;
 }
 
+.results-note {
+  color: var(--warn);
+  background: var(--warn-bg);
+  border: 1px solid var(--warn);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+}
+
 .day-card {
   background: var(--panel-bg);
   border: 1px solid var(--border);
@@ -282,8 +293,10 @@
   margin-top: 2px;
 }
 
-.place-rating {
+.place-meta {
   font-size: 13px;
   color: var(--text-muted);
   margin-top: 2px;
+  display: flex;
+  gap: 12px;
 }

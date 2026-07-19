@@ -67,6 +67,25 @@ def _candidate_summary(pool):
     }
 
 
+LOCALE_TONE_INSTRUCTIONS = {
+    "indonesian": (
+        "Write the summary and every day's narrative in natural, warm Bahasa Indonesia, "
+        "in a friendly, conversational travel-guide register."
+    ),
+    "malaysian": "Write in English with a warm, friendly Malaysian travel-guide tone and register.",
+    "singaporean": "Write in English with a clear, efficient, friendly Singaporean travel-guide tone.",
+    "filipino": "Write in English with a warm, enthusiastic, welcoming Filipino travel-guide tone.",
+    "thai": "Write in English with a gentle, polite, welcoming tone reflecting Thai hospitality.",
+    "vietnamese": "Write in English with a warm, practical Vietnamese travel-guide tone.",
+}
+
+
+def _locale_instruction(locale):
+    if not locale:
+        return None
+    return LOCALE_TONE_INSTRUCTIONS.get(locale.strip().lower())
+
+
 RESPONSE_SHAPE = (
     '{"summary": "2-3 sentence overview of the whole trip, generic, no place names", '
     '"days": [{"day": 1, "attraction_ids": [1, 2], "restaurant_ids": [3], '
@@ -101,6 +120,14 @@ def build_messages(req, pool):
         f"Plan exactly {num_days} day(s). Always set hotel_id to null when duration_nights "
         "is 0 (same-day trip, no overnight stay)."
     )
+    locale_instruction = _locale_instruction(req.locale)
+    if locale_instruction:
+        system += (
+            f"\nTONE (applies ONLY to the \"summary\" and \"narrative\" text, nothing else): "
+            f"{locale_instruction} This is a tone/phrasing instruction only -- it must not "
+            "change which ids you choose, how many days you plan, or any numeric/factual "
+            "content; those are driven solely by the constraints and candidates above."
+        )
     user_payload = {
         "constraints": {
             "budget_idr": req.budget,

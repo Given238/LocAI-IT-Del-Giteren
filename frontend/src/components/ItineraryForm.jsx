@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { INTEREST_OPTIONS } from "../constants";
+import { INTEREST_OPTIONS, LOCALE_OPTIONS } from "../constants";
 
 const initialForm = {
   budget: "",
   durationNights: "1",
   startLocation: "",
   interests: [],
+  locale: "",
 };
 
 export default function ItineraryForm({ onSubmit, disabled }) {
@@ -37,6 +38,7 @@ export default function ItineraryForm({ onSubmit, disabled }) {
       duration_nights: durationValue,
       start_location: form.startLocation.trim(),
       interests: form.interests.length > 0 ? form.interests : null,
+      locale: form.locale || null,
     });
   }
 
@@ -107,6 +109,26 @@ export default function ItineraryForm({ onSubmit, disabled }) {
           ))}
         </div>
       </fieldset>
+
+      <div className="form-row">
+        <label htmlFor="locale">Narrative tone</label>
+        <select
+          id="locale"
+          className="locale-select"
+          value={form.locale}
+          disabled={disabled}
+          onChange={(e) => setForm((f) => ({ ...f, locale: e.target.value }))}
+        >
+          {LOCALE_OPTIONS.map(({ key, label }) => (
+            <option key={key} value={key}>
+              {label}
+            </option>
+          ))}
+        </select>
+        <span className="field-hint">
+          Affects wording only -- picks, prices, and addresses never change.
+        </span>
+      </div>
 
       <button type="submit" className="submit-button" disabled={disabled}>
         {disabled ? "Building itinerary..." : "Build my itinerary"}

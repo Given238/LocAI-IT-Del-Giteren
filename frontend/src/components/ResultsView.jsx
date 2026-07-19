@@ -11,8 +11,15 @@ export default function ResultsView({ result }) {
 
       {result.summary && <p className="results-summary">{result.summary}</p>}
 
+      {!result.distance_reference && (
+        <p className="results-note">
+          Distances aren't shown because &quot;{result.constraints.start_location}&quot; isn't in our
+          known list of Toba-region hubs -- we don't guess a nearest match.
+        </p>
+      )}
+
       {result.days.map((day) => (
-        <DayCard key={day.day} day={day} />
+        <DayCard key={day.day} day={day} distanceReference={result.distance_reference} />
       ))}
     </div>
   );
