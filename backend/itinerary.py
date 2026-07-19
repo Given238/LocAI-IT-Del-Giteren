@@ -27,6 +27,8 @@ def _place_out(row, category, price_min_key, price_max_key, detail_key=None, sta
         rating=row.get("rating"),
         detail=row.get(detail_key) if detail_key else None,
         distance_km=_distance_km(row, start_coords),
+        latitude=row.get("latitude"),
+        longitude=row.get("longitude"),
     )
 
 
@@ -82,6 +84,8 @@ def build_itinerary(req) -> ItineraryResponse:
             estimated_total_cost_max=None,
             candidates_considered=candidates_considered,
             distance_reference=distance_reference,
+            start_latitude=start_coords[0] if start_coords else None,
+            start_longitude=start_coords[1] if start_coords else None,
         )
 
     plan = llm.generate_itinerary_plan(req, pool)
@@ -141,4 +145,6 @@ def build_itinerary(req) -> ItineraryResponse:
         estimated_total_cost_max=total_max,
         candidates_considered=candidates_considered,
         distance_reference=distance_reference,
+        start_latitude=start_coords[0] if start_coords else None,
+        start_longitude=start_coords[1] if start_coords else None,
     )

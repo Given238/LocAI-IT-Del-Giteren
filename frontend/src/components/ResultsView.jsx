@@ -1,7 +1,14 @@
+import { useState } from "react";
 import { formatIdr } from "../format";
 import DayCard from "./DayCard";
+import MapView from "./MapView";
 
 export default function ResultsView({ result }) {
+  const [selectedPlace, setSelectedPlace] = useState(null);
+
+  const hasMap = result.start_latitude != null && result.start_longitude != null;
+  const startCoords = hasMap ? [result.start_latitude, result.start_longitude] : null;
+
   return (
     <div className="results-view">
       <div className="results-total">
@@ -18,8 +25,22 @@ export default function ResultsView({ result }) {
         </p>
       )}
 
+      {hasMap && (
+        <MapView
+          startCoords={startCoords}
+          startLabel={result.distance_reference}
+          selectedPlace={selectedPlace}
+        />
+      )}
+
       {result.days.map((day) => (
-        <DayCard key={day.day} day={day} distanceReference={result.distance_reference} />
+        <DayCard
+          key={day.day}
+          day={day}
+          distanceReference={result.distance_reference}
+          selectedPlace={hasMap ? selectedPlace : null}
+          onSelectPlace={hasMap ? setSelectedPlace : undefined}
+        />
       ))}
     </div>
   );

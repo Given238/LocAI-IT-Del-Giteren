@@ -204,6 +204,39 @@
   font-size: 13px;
 }
 
+/* ---- Map ---- */
+
+.map-panel {
+  position: sticky;
+  top: 24px;
+  z-index: 1;
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.map-container {
+  width: 100%;
+  height: 320px;
+  border-radius: 8px;
+}
+
+.map-hint {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.map-distance-tooltip {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
 .day-card {
   background: var(--panel-bg);
   border: 1px solid var(--border);
@@ -251,10 +284,31 @@
 
 .place-item {
   padding: 10px 0;
+  border-radius: 6px;
 }
 
 .place-item + .place-item {
   border-top: 1px dashed var(--border);
+}
+
+.place-item-clickable {
+  cursor: pointer;
+  padding-inline: 8px;
+  margin-inline: -8px;
+}
+
+.place-item-clickable:hover {
+  background: var(--accent-bg);
+}
+
+.place-item-selected {
+  background: var(--accent-bg);
+  outline: 1px solid var(--accent-border);
+}
+
+.place-map-hint {
+  color: var(--accent);
+  font-weight: 600;
 }
 
 .place-item-header {

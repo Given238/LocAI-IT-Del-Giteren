@@ -1,7 +1,11 @@
 import { formatIdr } from "../format";
 import PlaceItem from "./PlaceItem";
 
-export default function DayCard({ day, distanceReference }) {
+function isSamePlace(a, b) {
+  return a && b && a.category === b.category && a.id === b.id;
+}
+
+export default function DayCard({ day, distanceReference, selectedPlace, onSelectPlace }) {
   const hasAttractions = day.attractions.length > 0;
   const hasMeals = day.meals.length > 0;
   const hasTransport = day.transport.length > 0;
@@ -28,7 +32,13 @@ export default function DayCard({ day, distanceReference }) {
         <section className="day-section">
           <h4>Attractions</h4>
           {day.attractions.map((a) => (
-            <PlaceItem key={a.id} place={a} distanceReference={distanceReference} />
+            <PlaceItem
+              key={a.id}
+              place={a}
+              distanceReference={distanceReference}
+              onSelect={onSelectPlace}
+              isSelected={isSamePlace(selectedPlace, a)}
+            />
           ))}
         </section>
       )}
@@ -37,7 +47,13 @@ export default function DayCard({ day, distanceReference }) {
         <section className="day-section">
           <h4>Meals</h4>
           {day.meals.map((m) => (
-            <PlaceItem key={m.id} place={m} distanceReference={distanceReference} />
+            <PlaceItem
+              key={m.id}
+              place={m}
+              distanceReference={distanceReference}
+              onSelect={onSelectPlace}
+              isSelected={isSamePlace(selectedPlace, m)}
+            />
           ))}
         </section>
       )}
@@ -45,7 +61,12 @@ export default function DayCard({ day, distanceReference }) {
       {day.lodging && (
         <section className="day-section">
           <h4>Lodging</h4>
-          <PlaceItem place={day.lodging} distanceReference={distanceReference} />
+          <PlaceItem
+            place={day.lodging}
+            distanceReference={distanceReference}
+            onSelect={onSelectPlace}
+            isSelected={isSamePlace(selectedPlace, day.lodging)}
+          />
         </section>
       )}
 

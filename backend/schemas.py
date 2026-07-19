@@ -27,6 +27,8 @@ class PlaceOut(BaseModel):
     rating: Optional[float] = None
     detail: Optional[str] = None
     distance_km: Optional[float] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
 
 
 class DayPlan(BaseModel):
@@ -50,3 +52,5 @@ class ItineraryResponse(BaseModel):
     estimated_total_cost_max: Optional[float] = None
     candidates_considered: dict
     distance_reference: Optional[str] = None
+    start_latitude: Optional[float] = None
+    start_longitude: Optional[float] = None
