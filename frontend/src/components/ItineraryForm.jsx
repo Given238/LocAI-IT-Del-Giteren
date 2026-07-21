@@ -1,22 +1,25 @@
 import { useState } from "react";
 import { INTEREST_OPTIONS, LOCALE_OPTIONS } from "../constants";
+import { isValidBudget, isValidDuration, isValidStartLocation } from "../validation";
 
-const initialForm = {
-  budget: "",
-  durationNights: "1",
-  startLocation: "",
-  interests: [],
-};
+function buildInitialForm(initialValues) {
+  return {
+    budget: initialValues?.budget != null ? String(initialValues.budget) : "",
+    durationNights: initialValues?.duration_nights != null ? String(initialValues.duration_nights) : "1",
+    startLocation: initialValues?.start_location ?? "",
+    interests: initialValues?.interests ?? [],
+  };
+}
 
-export default function ItineraryForm({ onSubmit, disabled, locale, onLocaleChange }) {
-  const [form, setForm] = useState(initialForm);
+export default function ItineraryForm({ onSubmit, disabled, locale, onLocaleChange, initialValues }) {
+  const [form, setForm] = useState(() => buildInitialForm(initialValues));
   const [touched, setTouched] = useState(false);
 
   const budgetValue = Number(form.budget);
   const durationValue = Number(form.durationNights);
-  const budgetValid = form.budget !== "" && budgetValue > 0;
-  const durationValid = form.durationNights !== "" && durationValue >= 0 && Number.isInteger(durationValue);
-  const locationValid = form.startLocation.trim().length > 0;
+  const budgetValid = isValidBudget(form.budget);
+  const durationValid = isValidDuration(form.durationNights);
+  const locationValid = isValidStartLocation(form.startLocation);
   const formValid = budgetValid && durationValid && locationValid;
 
   function toggleInterest(key) {

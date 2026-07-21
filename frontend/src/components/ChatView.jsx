@@ -21,7 +21,21 @@ function toHistory(messages) {
 const sttSupported = isSpeechRecognitionSupported();
 const ttsSupported = isSpeechSynthesisSupported();
 
-export default function ChatView({ locale, onLocaleChange }) {
+// Plain, unformatted numbers on purpose -- this text is parsed by the chat
+// LLM, not read by a human. Using "Rp500.000" (id-ID's period-as-thousands-
+// separator) here caused a real bug: the LLM read "500.000" as an unclear
+// number and asked a clarifying question instead of calling the tool, even
+// though the value was right there. Nicely-formatted "Rp500.000" is fine
+// for the button's own visible label (a human reads that), just not for
+// the message actually sent.
+function quickStartText(profile) {
+  const parts = [`a budget of Rp${profile.budget}`, `${profile.duration_nights} night(s)`, `starting from ${profile.start_location}`];
+  let text = `Plan a trip with ${parts.join(", ")}`;
+  if (profile.interests?.length) text += `, interested in ${profile.interests.join(", ")}`;
+  return text + ".";
+}
+
+export default function ChatView({ locale, onLocaleChange, profile }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -168,6 +182,12 @@ export default function ChatView({ locale, onLocaleChange }) {
           <span className="field-hint">Voice isn't supported in this browser.</span>
         )}
       </div>
+
+      {messages.length === 0 && profile?.budget != null && profile?.duration_nights != null && profile?.start_location && (
+        <button type="button" className="quick-start-chip" onClick={() => sendMessage(quickStartText(profile))}>
+          Use my saved trip: Rp{Number(profile.budget).toLocaleString("id-ID")} &middot; {profile.duration_nights} night(s) &middot; from {profile.start_location} →
+        </button>
+      )}
 
       <div className="chat-messages" ref={messagesRef}>
         {messages.map((m, i) => {

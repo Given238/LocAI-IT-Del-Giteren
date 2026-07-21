@@ -26,6 +26,7 @@ export const LOCALE_VOICE_LANG = {
   filipino: ["en-PH", "en"],
   thai: ["en-TH", "en"],
   vietnamese: ["en-VN", "en"],
+  others: [],
 };
 
 // Separate on purpose: LOCALE_VOICE_LANG governs what language the bot's
@@ -46,6 +47,7 @@ export const LOCALE_RECOGNITION_LANG = {
   filipino: ["fil-PH", "tl-PH", "en-PH", "en"],
   thai: ["th-TH", "th", "en-TH", "en"],
   vietnamese: ["vi-VN", "vi", "en-VN", "en"],
+  others: [],
 };
 
 export function isSpeechRecognitionSupported() {

@@ -5,6 +5,8 @@ import LoadingState from "./components/LoadingState";
 import ErrorState from "./components/ErrorState";
 import ResultsView from "./components/ResultsView";
 import ChatView from "./components/ChatView";
+import Onboarding from "./components/Onboarding";
+import { loadProfile, saveProfile, hasOnboarded } from "./profile";
 import "./App.css";
 
 export default function App() {
@@ -12,11 +14,24 @@ export default function App() {
   const [status, setStatus] = useState("idle"); // idle | loading | success | error
   const [result, setResult] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
+  const [profile, setProfile] = useState(() => loadProfile());
+  const [profileVersion, setProfileVersion] = useState(0);
+  const [showOnboarding, setShowOnboarding] = useState(() => !hasOnboarded(loadProfile()));
   // Single source of truth for locale -- read by the form's narrative-tone
-  // dropdown AND by chat's voice output. Once Phase 6 (onboarding) exists,
-  // this should be seeded from the user's stored profile instead; see
-  // "Locale: single source of truth" in CLAUDE.md.
-  const [locale, setLocale] = useState("");
+  // dropdown AND by chat's voice output. Reads the stored profile FIRST
+  // (per "Locale: single source of truth" in CLAUDE.md); the dropdown
+  // remains a live per-session override on top of that -- changing it here
+  // does NOT write back to the stored profile, only completing/editing
+  // onboarding does.
+  const [locale, setLocale] = useState(() => loadProfile()?.locale || "");
+
+  function handleOnboardingFinish(collected) {
+    saveProfile(collected);
+    setProfile(loadProfile());
+    setProfileVersion((v) => v + 1);
+    setLocale(collected.locale || "");
+    setShowOnboarding(false);
+  }
 
   async function handleSubmit(payload) {
     setStatus("loading");
@@ -57,7 +72,19 @@ export default function App() {
             Form
           </button>
         </div>
+        <button type="button" className="edit-preferences-button" onClick={() => setShowOnboarding(true)}>
+          ⚙ Edit my preferences
+        </button>
       </header>
+
+      {showOnboarding && (
+        <Onboarding
+          initialProfile={profile}
+          isFirstRun={!hasOnboarded(profile)}
+          onFinish={handleOnboardingFinish}
+          onDismiss={() => setShowOnboarding(false)}
+        />
+      )}
 
       {/*
         Both panels stay mounted at all times and are only hidden via CSS.
@@ -66,15 +93,17 @@ export default function App() {
         time someone glanced at the Form tab and came back.
       */}
       <main className={`app-main app-main-chat ${mode === "chat" ? "" : "mode-hidden"}`}>
-        <ChatView locale={locale} onLocaleChange={setLocale} />
+        <ChatView locale={locale} onLocaleChange={setLocale} profile={profile} />
       </main>
 
       <main className={`app-main ${mode === "form" ? "" : "mode-hidden"}`}>
         <ItineraryForm
+          key={profileVersion}
           onSubmit={handleSubmit}
           disabled={status === "loading"}
           locale={locale}
           onLocaleChange={setLocale}
+          initialValues={profile}
         />
 
         <div className="app-results">

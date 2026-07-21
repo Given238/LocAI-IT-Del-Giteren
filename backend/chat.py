@@ -167,6 +167,15 @@ def handle_chat(req) -> ChatResponse:
     if tool_args is None:
         return ChatResponse(reply=content.strip())
 
+    # When natural-language phrasing mentions only one interest (e.g. "I'm
+    # interested in nature"), the model sometimes emits interests="nature"
+    # instead of interests=["nature"] -- a bare string isn't a valid
+    # list[str], so ItineraryRequest would reject an otherwise-complete,
+    # perfectly usable call. Normalize rather than let a single-item
+    # mention fail validation entirely.
+    if isinstance(tool_args.get("interests"), str):
+        tool_args["interests"] = [tool_args["interests"]]
+
     try:
         itinerary_req = ItineraryRequest(**tool_args)
     except ValidationError:
