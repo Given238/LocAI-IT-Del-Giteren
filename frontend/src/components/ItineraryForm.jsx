@@ -6,10 +6,9 @@ const initialForm = {
   durationNights: "1",
   startLocation: "",
   interests: [],
-  locale: "",
 };
 
-export default function ItineraryForm({ onSubmit, disabled }) {
+export default function ItineraryForm({ onSubmit, disabled, locale, onLocaleChange }) {
   const [form, setForm] = useState(initialForm);
   const [touched, setTouched] = useState(false);
 
@@ -38,7 +37,7 @@ export default function ItineraryForm({ onSubmit, disabled }) {
       duration_nights: durationValue,
       start_location: form.startLocation.trim(),
       interests: form.interests.length > 0 ? form.interests : null,
-      locale: form.locale || null,
+      locale: locale || null,
     });
   }
 
@@ -115,9 +114,9 @@ export default function ItineraryForm({ onSubmit, disabled }) {
         <select
           id="locale"
           className="locale-select"
-          value={form.locale}
+          value={locale}
           disabled={disabled}
-          onChange={(e) => setForm((f) => ({ ...f, locale: e.target.value }))}
+          onChange={(e) => onLocaleChange(e.target.value)}
         >
           {LOCALE_OPTIONS.map(({ key, label }) => (
             <option key={key} value={key}>

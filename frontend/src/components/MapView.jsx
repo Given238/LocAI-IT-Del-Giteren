@@ -36,11 +36,19 @@ export default function MapView({ startCoords, startLabel, selectedPlace, onClos
 
   return (
     <div className={`map-panel${sticky ? " map-panel-sticky" : ""}`}>
-      {onClose && (
-        <button type="button" className="map-close-button" onClick={onClose}>
-          Close map ✕
-        </button>
-      )}
+      <div className="map-panel-header">
+        <p className="map-hint">
+          {selectedPlace
+            ? `Straight-line distance from ${startLabel} to ${selectedPlace.name} -- not a driving route. Click another place card to change it.`
+            : `Click a place card below (not the map) to draw its approximate distance from ${startLabel}.`}
+        </p>
+        {onClose && (
+          <button type="button" className="map-close-button" onClick={onClose}>
+            Close map ✕
+          </button>
+        )}
+      </div>
+
       <MapContainer center={startCoords} zoom={10} scrollWheelZoom={false} className="map-container">
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -65,12 +73,6 @@ export default function MapView({ startCoords, startLabel, selectedPlace, onClos
 
         <FitBounds startCoords={startCoords} destCoords={destCoords} />
       </MapContainer>
-
-      <p className="map-hint">
-        {selectedPlace
-          ? `Straight-line distance from ${startLabel} to ${selectedPlace.name} -- not a driving route.`
-          : `Click a place card below to draw its approximate distance from ${startLabel}.`}
-      </p>
     </div>
   );
 }

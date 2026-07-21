@@ -12,6 +12,11 @@ export default function App() {
   const [status, setStatus] = useState("idle"); // idle | loading | success | error
   const [result, setResult] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
+  // Single source of truth for locale -- read by the form's narrative-tone
+  // dropdown AND by chat's voice output. Once Phase 6 (onboarding) exists,
+  // this should be seeded from the user's stored profile instead; see
+  // "Locale: single source of truth" in CLAUDE.md.
+  const [locale, setLocale] = useState("");
 
   async function handleSubmit(payload) {
     setStatus("loading");
@@ -61,11 +66,16 @@ export default function App() {
         time someone glanced at the Form tab and came back.
       */}
       <main className={`app-main app-main-chat ${mode === "chat" ? "" : "mode-hidden"}`}>
-        <ChatView />
+        <ChatView locale={locale} onLocaleChange={setLocale} />
       </main>
 
       <main className={`app-main ${mode === "form" ? "" : "mode-hidden"}`}>
-        <ItineraryForm onSubmit={handleSubmit} disabled={status === "loading"} />
+        <ItineraryForm
+          onSubmit={handleSubmit}
+          disabled={status === "loading"}
+          locale={locale}
+          onLocaleChange={setLocale}
+        />
 
         <div className="app-results">
           {status === "loading" && <LoadingState />}

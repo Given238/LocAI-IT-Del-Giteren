@@ -1,5 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { fetchChat, ApiError } from "../api";
+import { LOCALE_OPTIONS } from "../constants";
+import {
+  createRecognizer,
+  isSpeechRecognitionSupported,
+  isSpeechSynthesisSupported,
+  speak,
+  stopSpeaking,
+} from "../voice";
 import ResultsView from "./ResultsView";
 
 function toHistory(messages) {
@@ -10,21 +18,40 @@ function toHistory(messages) {
   }));
 }
 
-export default function ChatView() {
+const sttSupported = isSpeechRecognitionSupported();
+const ttsSupported = isSpeechSynthesisSupported();
+
+export default function ChatView({ locale, onLocaleChange }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
+  const [voiceMode, setVoiceMode] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [voiceStatus, setVoiceStatus] = useState("");
   const messagesRef = useRef(null);
+  const recognizerRef = useRef(null);
+  const localeRef = useRef(locale);
+  localeRef.current = locale;
+  // speak() calls are fire-and-forget; if a reply arrives while the
+  // previous one is still "finishing" (cancel() doesn't fire onend
+  // synchronously), a stale onEnd could overwrite the status line with an
+  // older result. Only the most recent call is allowed to update it.
+  const speechSeqRef = useRef(0);
 
   useEffect(() => {
     const el = messagesRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages, sending]);
 
-  async function handleSend(e) {
-    e.preventDefault();
-    const text = input.trim();
+  // Stop any in-progress recognition/speech if the component unmounts, and
+  // if voice mode gets switched off mid-speech.
+  useEffect(() => {
+    if (!voiceMode) stopSpeaking();
+  }, [voiceMode]);
+  useEffect(() => () => { recognizerRef.current?.abort(); stopSpeaking(); }, []);
+
+  async function sendMessage(text) {
     if (!text || sending) return;
 
     const historyForApi = toHistory(messages);
@@ -45,6 +72,19 @@ export default function ChatView() {
           pdfFilename: body.pdf_filename || null,
         },
       ]);
+      if (voiceMode && body.reply) {
+        const seq = ++speechSeqRef.current;
+        speak(body.reply, localeRef.current, {
+          onVoiceSelected: ({ supported, usedVoice, fellBack }) => {
+            if (!supported || seq !== speechSeqRef.current) return;
+            setVoiceStatus(
+              fellBack
+                ? `Voice: ${usedVoice ? usedVoice.name : "browser default"} (no voice installed for this locale -- fell back)`
+                : `Voice: ${usedVoice ? `${usedVoice.name} (${usedVoice.lang})` : "browser default"}`,
+            );
+          },
+        });
+      }
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Something went wrong.");
     } finally {
@@ -52,11 +92,81 @@ export default function ChatView() {
     }
   }
 
+  function handleTextSubmit(e) {
+    e.preventDefault();
+    const text = input.trim();
+    if (!text) return;
+    sendMessage(text);
+  }
+
+  function toggleRecording() {
+    if (recording) {
+      recognizerRef.current?.stop();
+      return;
+    }
+
+    // Mic permission is requested here, by the browser, only now -- never
+    // on page load or just from switching voice mode on.
+    const recognizer = createRecognizer(locale, {
+      onResult: (transcript) => {
+        setRecording(false);
+        sendMessage(transcript.trim());
+      },
+      onError: (err) => {
+        setRecording(false);
+        if (err !== "no-speech" && err !== "aborted") {
+          setError(`Voice input error: ${err}`);
+        }
+      },
+      onEnd: () => setRecording(false),
+    });
+
+    if (!recognizer) {
+      setError("Voice input isn't supported in this browser.");
+      return;
+    }
+    recognizerRef.current = recognizer;
+    setError("");
+    setRecording(true);
+    recognizer.start();
+  }
+
   return (
     <div className="chat-view">
       <div className="chat-intro">
         Tell me your budget, trip length, and where you're starting from, and I'll build a real,
         verified Danau Toba itinerary -- the same grounded pipeline as the form, just conversational.
+      </div>
+
+      <div className="chat-toolbar">
+        <label className="chat-locale-label">
+          Locale
+          <select
+            className="locale-select chat-locale-select"
+            value={locale}
+            onChange={(e) => onLocaleChange(e.target.value)}
+          >
+            {LOCALE_OPTIONS.map(({ key, label }) => (
+              <option key={key} value={key}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        {(sttSupported || ttsSupported) && (
+          <label className="voice-mode-toggle">
+            <input
+              type="checkbox"
+              checked={voiceMode}
+              onChange={(e) => setVoiceMode(e.target.checked)}
+            />
+            Voice mode
+          </label>
+        )}
+        {!sttSupported && !ttsSupported && (
+          <span className="field-hint">Voice isn't supported in this browser.</span>
+        )}
       </div>
 
       <div className="chat-messages" ref={messagesRef}>
@@ -89,8 +199,20 @@ export default function ChatView() {
       </div>
 
       {error && <p className="chat-error">{error}</p>}
+      {voiceMode && voiceStatus && <p className="voice-status">{voiceStatus}</p>}
 
-      <form className="chat-input-row" onSubmit={handleSend}>
+      <form className="chat-input-row" onSubmit={handleTextSubmit}>
+        {voiceMode && sttSupported && (
+          <button
+            type="button"
+            className={`mic-button ${recording ? "recording" : ""}`}
+            onClick={toggleRecording}
+            aria-pressed={recording}
+            title={recording ? "Stop recording" : "Speak your message"}
+          >
+            {recording ? "● Listening..." : "🎤"}
+          </button>
+        )}
         <input
           type="text"
           placeholder="e.g. I want to visit Toba, budget 500000, from Sibolga, 1 night"
