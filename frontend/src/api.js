@@ -7,13 +7,19 @@ export class ApiError extends Error {
   }
 }
 
-async function postJson(path, payload) {
+// credentials: "include" on every call -- harmless for /itinerary and
+// /chat (they don't use the session), but required for the session cookie
+// to be sent/received at all: frontend (:5173) and backend (:8000) are
+// different origins in dev, and browsers never attach cookies cross-origin
+// without this.
+async function request(method, path, body) {
   let res;
   try {
     res = await fetch(`${API_BASE_URL}${path}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      method,
+      credentials: "include",
+      headers: body !== undefined ? { "Content-Type": "application/json" } : undefined,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
     });
   } catch {
     throw new ApiError(
@@ -22,25 +28,37 @@ async function postJson(path, payload) {
     );
   }
 
-  let body = null;
+  let responseBody = null;
   try {
-    body = await res.json();
+    responseBody = await res.json();
   } catch {
-    // no JSON body (e.g. a plain 500 with no detail) -- fall through
+    // no JSON body (e.g. a plain 500 with no detail, or a 204) -- fall through
   }
 
   if (!res.ok) {
-    const detail = body?.detail || body?.message || res.statusText;
+    const detail = responseBody?.detail || responseBody?.message || res.statusText;
     throw new ApiError(detail, res.status);
   }
 
-  return body;
+  return responseBody;
 }
 
 export function fetchItinerary(payload) {
-  return postJson("/itinerary", payload);
+  return request("POST", "/itinerary", payload);
 }
 
 export function fetchChat(history, message) {
-  return postJson("/chat", { history, message });
+  return request("POST", "/chat", { history, message });
+}
+
+export function apiGet(path) {
+  return request("GET", path);
+}
+
+export function apiPost(path, body) {
+  return request("POST", path, body ?? {});
+}
+
+export function apiPut(path, body) {
+  return request("PUT", path, body ?? {});
 }

@@ -76,3 +76,36 @@ class ChatResponse(BaseModel):
     itinerary: Optional[ItineraryResponse] = None
     pdf_base64: Optional[str] = None
     pdf_filename: Optional[str] = None
+
+
+class SignupRequest(BaseModel):
+    email: str = Field(..., min_length=3)
+    password: str = Field(..., min_length=8)
+    display_name: Optional[str] = None
+
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+class UserOut(BaseModel):
+    id: int
+    email: str
+    display_name: Optional[str] = None
+
+
+# Same shape as ItineraryRequest's own fields, but every field is optional --
+# this is a partially-filled preference profile, not a ready-to-submit
+# itinerary request (onboarding can be skipped/partially answered).
+class ProfileData(BaseModel):
+    budget: Optional[float] = None
+    duration_nights: Optional[int] = None
+    start_location: Optional[str] = None
+    interests: Optional[list[str]] = None
+    locale: Optional[str] = None
+
+
+class MeResponse(BaseModel):
+    user: Optional[UserOut] = None
+    profile: Optional[ProfileData] = None
